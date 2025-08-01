@@ -1,6 +1,6 @@
 // include {bowtie2} from './modules/bowtie2.nf'
 process samtools_remove_hosts {
-    publishDir "output/samtools_remove_hosts", mode: 'symlink', overwrite: true
+    publishDir "output/remove_hosts/${meta.id}", mode: 'symlink', overwrite: true
 
     input:
     tuple val(meta),path(bam)
@@ -37,7 +37,7 @@ process samtools_remove_hosts {
 
 process bowtie2 {
     tag "$meta.id"
-    publishDir "output/bowtie2/${meta.id}", mode: 'symlink', overwrite: true
+    publishDir "output/remove_hosts/${meta.id}", mode: 'symlink', overwrite: true
     // publishDir "/data2/wangyang/storeDir/test/${meta.id}", mode: 'copy', overwrite: true
 
     // storeDir '/data2/wangyang/storeDir/test2'
@@ -70,10 +70,21 @@ process bowtie2 {
     """
 }
 
+workflow remove_hosts {
+    take:
+    ch_input
 
-workflow  {
-    ch_input = channel.fromList(params.fastp_clean_reads).map(it->[[id:it.analysis_key],[it.fastq1,it.fastq2]])
-    ch_bowtie2_host_index = Channel.value(params.genome_index)
+    main:
+    ch_bowtie2_host_index = Channel.value(params.genome_index.path)
     ch_bowtie2_res = bowtie2(ch_input, ch_bowtie2_host_index)    
     ch_samtools_remove_hosts_res = samtools_remove_hosts(ch_bowtie2_res.aligned)
+
+    emit:
+    ch_samtools_remove_hosts_res
+}
+
+
+workflow  {
+    ch_input = channel.fromList(params.clean_reads).map(it->[[id:it.sample_name],[it.fastq1,it.fastq2]])
+    ch_remove_hosts_reads = remove_hosts(ch_input)
 }

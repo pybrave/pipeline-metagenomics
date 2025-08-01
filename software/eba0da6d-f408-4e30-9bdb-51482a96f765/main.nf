@@ -15,12 +15,15 @@ process metawrap_assembly{
     """
     #gunzip -c ${reads[0]} > ${reads1}
     #gunzip -c ${reads[1]} > ${reads2}
-    export PATH=/home/jovyan/.conda/envs/metawrap-env/bin:/ssd1/wy/workspace2/software/metaWRAP/bin:\$PATH
-    metawrap assembly \
-        -1 ${reads[0]} \
-        -2 ${reads[1]} \
-        -m ${task.memory.toGiga()} -t ${task.cpus} \
-        --metaspades -o ${meta.id}
+    #export PATH=/home/jovyan/.conda/envs/metawrap-env/bin:/ssd1/wy/workspace2/software/metaWRAP/bin:\$PATH
+   # metawrap assembly \
+    #    -1 ${reads[0]} \
+    #    -2 ${reads[1]} \
+    #    -m ${task.memory.toGiga()} -t ${task.cpus} \
+    #    --metaspades -o ${meta.id}
+    sleep 2
+    mkdir ${meta.id}
+    touch ${meta.id}/final_assembly.fasta
     """
 }
 workflow{
