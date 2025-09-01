@@ -1,6 +1,7 @@
 
 process metaphlan {
     publishDir "output/metaphlan/${meta.id}", mode: 'symlink', overwrite: true
+    tag "${meta.id}"
     input:
     tuple val(meta),path(reads)
     val(metaphlan_db_latest)
@@ -12,13 +13,15 @@ process metaphlan {
     tuple val(meta), path('*.bowtie2out.txt'), optional:true, emit: bt2out
 
     script:
+    def bowtie2out = "--bowtie2out ${meta.id}.bowtie2out.txt" 
     """
     export PATH=/home/jovyan/.conda/envs/metaphlan/bin:\$PATH
     metaphlan \
         --nproc $task.cpus \
         --input_type fastq \
+        --ignore_usgbs \
         ${reads[0]},${reads[1]} \
-        --bowtie2out ${meta.id}.bowtie2out.txt \
+        ${bowtie2out} \
         --biom ${meta.id}.biom \
         --output_file ${meta.id}_profile.txt \
         --bowtie2db $metaphlan_db_latest  \

@@ -144,11 +144,57 @@ process HUMANN_KEGG{
     sed -i 's/,/\\t/g'  ${meta.id}/${meta.id}.Pathway.txt
     """
 }
+
+process GMM{
+    tag "$meta.id"
+    publishDir "output/humann", mode: 'symlink', overwrite: true
+    container "registry.cn-hangzhou.aliyuncs.com/wybioinfo/gmm"
+    input:
+    tuple val(meta), path(normalization)
+    path txt
+
+
+    output:
+    tuple val(meta), path("GMM/${meta.id}/${meta.id}*")    , emit: profile 
+
+    script:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    
+    """
+    gmm.sh -d ${txt} -i ${normalization} -s average -o GMM/${meta.id}
+    """
+    // cp ${meta.id}/gene_profile.modules ${meta.id}/${meta.id}_gene_profile.modules
+}
+process GBM{
+    tag "$meta.id"
+    publishDir "output/humann", mode: 'symlink', overwrite: true
+    container "registry.cn-hangzhou.aliyuncs.com/wybioinfo/gmm"
+    input:
+    tuple val(meta), path(normalization)
+    path txt
+
+
+    output:
+    tuple val(meta), path("GBM/${meta.id}/${meta.id}*")    , emit: profile 
+
+    script:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    
+    """
+    gmm.sh -d ${txt} -i ${normalization} -s average -o GBM/${meta.id}
+    """
+    // cp ${meta.id}/gene_profile.modules ${meta.id}/${meta.id}_gene_profile.modules
+}
+
+
 workflow{
     ch_input = channel.fromList(params.humann_profile).map(it->[[id:it.sample_name],[it.genefamilies,it.pathabundance]])
     //ch_input.view()
     HUMANN_PROFILE(ch_input,params.humann_utility_mapping.path)
     HUMANN_KEGG(HUMANN_PROFILE.out.KO_UNS,"/data/databases/kegg/module_ko.new.txt","/data/databases/kegg/pathway_ko.new.txt")
+    GMM(HUMANN_PROFILE.out.KO_UNS,"/data/metagenomics/pml_out/GMMs.v1.07.txt")
+
+    GBM(HUMANN_PROFILE.out.KO_UNS,"/data/metagenomics/pml_out/GBM.inputfile.txt")
 
 
 }
